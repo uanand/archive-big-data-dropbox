@@ -1,2 +1,2 @@
 # archive-big-data-dropbox
-A framwork to upload terabytes of data to Dropbox
+A framework to upload terabytes of data to Dropbox
