@@ -45,7 +45,7 @@ class dataPrep:
         for root,dirs,files in os.walk(inputDir):
             for name in files:
                 fileName = os.path.join(root,name)
-                fileSize = getsize(fileName)
+                fileSize = os.path.getsize(fileName)
                 fileNameList.append(fileName)
                 fileSizeList.append(fileSize)
         return fileNameList,fileSizeList
