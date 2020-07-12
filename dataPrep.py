@@ -1,10 +1,7 @@
 import os
 import numpy
 import pandas
-import platform
 from tqdm import tqdm
-
-from os.path import isfile,isdir,join,getsize,exists
 
 class dataPrep:
     
