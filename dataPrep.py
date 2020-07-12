@@ -19,6 +19,7 @@ class dataPrep:
         self.chunksInEachSplit = int(numpy.ceil(self.fileSizeLimit/self.chunkSizeSplit))
         self.df = pandas.read_excel(self.excelName,sheet_name=self.sheetName,names=self.names)
         
+        print ('Stage 1 - Data preparation')
         self.getFileList()
         self.checkForLargeFiles()
     ############################################################
@@ -26,7 +27,7 @@ class dataPrep:
     ############################################################
     def getFileList(self):
         fileNameList,fileSizeList = [],[]
-        for inputFile,dropboxDir in self.df.values[:,0]:
+        for inputFile in self.df.values[:,0]:
             if (os.path.isfile(inputFile)):
                 fileSize = os.path.getsize(inputFile)
                 fileNameList.append(inputFile)
