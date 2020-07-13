@@ -7,7 +7,7 @@ import shutil
 import utils
 import time
 
-class dropbox:
+class dropboxApp:
     
     ############################################################
     def __init__(self,excelName,sheetName,batchSize_GB=400,sleepTime=120,r_wSpeedCutOff=0.5):
