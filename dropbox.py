@@ -20,10 +20,12 @@ class dropboxApp:
         self.df = pandas.read_excel(self.excelName,sheet_name=self.sheetName,names=self.names)
         
         print ('Stage 2 - Data upload')
+        self.logFile = open('logs/dropboxApp.log','w')
         self.getFileList()
         utils.mkdirs(self.dropboxDirList)
         self.makeBatches()
         self.uploadFiles()
+        self.logFile.close()
     ############################################################
     
     ############################################################
@@ -68,25 +70,30 @@ class dropboxApp:
     
     ############################################################
     def makeBatches(self):
-        fileNameBatch,dropboxFileBatch = [],[]
-        l1,l2,totalSize = [],[],0
+        fileNameBatch,fileSizeBatch,dropboxFileBatch = [],[],[]
+        l1,l2,l3,totalSize = [],[],0
         lastFileIncluded = False
         for fileName,fileSize,dropboxFile in zip(self.fileNameList,self.fileSizeList,self.dropboxFileList):
             totalSize += fileSize
             if (totalSize <= self.batchSize):
                 l1.append(fileName)
-                l2.append(dropboxFile)
+                l2.append(fileSize)
+                l3.append(dropboxFile)
             elif (totalSize > self.batchSize):
                 fileNameBatch.append(l1)
-                dropboxFileBatch.append(l2)
-                l1,l2,totalSize = [],[],0
+                fileSizeBatch.append(l2)
+                dropboxFileBatch.append(l3)
+                l1,l2,l3,totalSize = [],[],[],0
                 l1.append(fileName)
-                l2.append(dropboxFile)
+                l2.append(fileSize)
+                l3.append(dropboxFile)
                 totalSize += fileSize
             if (fileName == self.fileNameList[-1]):
                 fileNameBatch.append(l1)
-                dropboxFileBatch.append(l2)
+                fileSizeBatch.append(l2)
+                dropboxFileBatch.append(l3)
         self.fileNameBatch = fileNameBatch
+        self.fileSizeBatch = fileSizeBatch
         self.dropboxFileBatch = dropboxFileBatch
         self.numBatches = len(fileNameBatch)
     ############################################################
@@ -97,9 +104,11 @@ class dropboxApp:
             resourceAvailable = False
             while (resourceAvailable == False):
                 resourceAvailable = self.checkResource()
-            print ('Working on batch %d/%d' %(i+1,self.numBatches))
-            for fileName,dropboxFile in zip(self.fileNameBatch[i],self.dropboxFileBatch[i]):
+            print ('Uploading batch %d/%d' %(i+1,self.numBatches))
+            self.logFile.write('%s\tUploading batch %d/%d\n' %(utils.timestamp(),i+1,self.numBatches))
+            for fileName,fileSize,dropboxFile in zip(self.fileNameBatch[i],self.fileSizeBatch[i],self.dropboxFileBatch[i]):
                 print ('Moving %s\tto\t%s' %(fileName,dropboxFile))
+                self.logFile.write('%s\t%s\t%s\t%.6f GB\n' %(utils.timestamp(),fileName,dropboxFile,fileSize/1024/1024/1024))
                 shutil.move(fileName,dropboxFile)
     ############################################################
     
@@ -145,6 +154,7 @@ class dropboxApp:
         if (availableSpace >= 2*self.batchSize):
             free = True
         else:
+            self.logFile.write('%s\tDisk full\n' %(utils.timestamp()))
             input('Disk is full. Move data to online-only mode. Press enter to continue after more space is available.')
         return free
     ############################################################
@@ -163,6 +173,7 @@ class dropboxApp:
         if (counter>=1):
             running = True
         else:
+            self.logFile.write('%s\tDropbox not running\n' %(utils.timestamp()))
             input('Dropbox not running. Make sure to start application. Press enter to continue after application starts.')
         return running
     ############################################################
