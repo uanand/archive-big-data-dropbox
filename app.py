@@ -12,4 +12,4 @@ r_wSpeedCutOff = 0.2
 
 dp = dataPrep.dataPrep(excelName,sheetName,fileSizeLimit_GB,chunkSizeSplit_MB)
 dbx = dropbox.dropboxApp(excelName,sheetName,batchSize_GB,sleepTime,r_wSpeedCutOff)
-utils.combineLogs(['logs/dataPrep.log','logs/dropboxApp.log'])
+utils.combineLogs()
