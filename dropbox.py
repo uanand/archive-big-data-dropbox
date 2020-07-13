@@ -23,11 +23,7 @@ class dropbox:
         self.getFileList()
         utils.mkdirs(self.dropboxDirList)
         self.makeBatches()
-        # self.uploadFiles()
-        
-        print(self.storageFree())
-        print(self.dropboxRunning())
-        print(self.droboxFree())
+        self.uploadFiles()
     ############################################################
     
     ############################################################
