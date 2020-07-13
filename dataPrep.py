@@ -9,7 +9,7 @@ class dataPrep:
     def __init__(self,excelName,sheetName,fileSizeLimit_GB=100,chunkSizeSplit_MB=1024):
         self.excelName = excelName
         self.sheetName = sheetName
-        self.names = ['inputFile','dropboxFile']
+        self.names = ['inputFile','outputDir']
         self.fileSizeLimit = fileSizeLimit_GB*1024*1024*1024
         self.chunkSizeSplit = chunkSizeSplit_MB*1024*1024
         
@@ -17,8 +17,10 @@ class dataPrep:
         self.df = pandas.read_excel(self.excelName,sheet_name=self.sheetName,names=self.names)
         
         print ('Stage 1 - Data preparation')
+        self.logFile = open('logs/dataPrep.log','w')
         self.getFileList()
         self.checkForLargeFiles()
+        self.logFile.close()
     ############################################################
     
     ############################################################
@@ -63,6 +65,7 @@ class dataPrep:
         fileSize = os.path.getsize(fileName)
         numFiles = int(fileSize/self.fileSizeLimit)+1
         print ('Splitting %s into %d parts' %(fileName,numFiles))
+        self.logFile.write('%s\tSplit %s into %d parts\n' %(utils.timestamp(),fileName,numFiles))
         
         numChunksToRead,splitNum,chunkNum = int(numpy.ceil(fileSize/self.chunkSizeSplit)),1,0
         outputFileName = fileName
