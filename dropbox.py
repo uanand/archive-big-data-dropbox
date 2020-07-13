@@ -71,7 +71,7 @@ class dropboxApp:
     ############################################################
     def makeBatches(self):
         fileNameBatch,fileSizeBatch,dropboxFileBatch = [],[],[]
-        l1,l2,l3,totalSize = [],[],0
+        l1,l2,l3,totalSize = [],[],[],0
         lastFileIncluded = False
         for fileName,fileSize,dropboxFile in zip(self.fileNameList,self.fileSizeList,self.dropboxFileList):
             totalSize += fileSize

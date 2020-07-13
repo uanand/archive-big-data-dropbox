@@ -44,7 +44,7 @@ def combineLogs():
     if os.path.exists('logs/dropboxAPI.log'):
         logList.append('logs/dropboxAPI.log')
         
-    logFile = open(datetime.datetime.now().strftime("%Y%m%d_%H%M%S")+'.log','w')
+    logFile = open('logs/'+datetime.datetime.now().strftime("%Y%m%d_%H%M%S")+'.log','w')
     for log in logList:
         f = open(log,'r')
         logFile.write(f.read())
