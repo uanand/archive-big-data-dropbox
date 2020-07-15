@@ -115,8 +115,9 @@ class dropboxApp:
     ############################################################
     def checkResource(self):
         resourceAvailable = False
-        if (self.droboxFree() and self.storageFree() and self.dropboxRunning()): # and self.dropboxStorageFree()
-            resourceAvailable = True
+        if (self.dropboxRunning() and self.storageFree()): # and self.dropboxStorageFree()
+            if (self.droboxFree()):
+                resourceAvailable = True
         return resourceAvailable
     ############################################################
     
@@ -161,18 +162,22 @@ class dropboxApp:
     
     ############################################################
     def dropboxRunning(self):
+        # TODO - detailed testing of dropbox on linux
         running = False
         counter = 0
-        for process in psutil.process_iter():
-            if (platform.system()=='Windows'):
+        if (platform.system()=='Windows'):
+            for process in psutil.process_iter():
                 if (process.name() == 'Dropbox.exe'):
                     counter += 1
-            elif (platform.system()=='Linux'):
+            if (counter==3):
+                running = True
+        elif (platform.system()=='Linux'):
+            for process in psutil.process_iter():
                 if (process.name() == 'dropbox'):
                     counter += 1
-        if (counter>=1):
-            running = True
-        else:
+            if (counter>=1):
+                running = True
+        if (running==False):
             self.logFile.write('%s\tDropbox not running\n' %(utils.timestamp()))
             input('Dropbox not running. Make sure to start application. Press enter to continue after application starts.')
         return running
@@ -180,7 +185,7 @@ class dropboxApp:
     
     ############################################################
     def dropboxStorageFree(self):
-        # TODO
+        # TODO - most likely will need API access for this
         pass
     ############################################################
     
