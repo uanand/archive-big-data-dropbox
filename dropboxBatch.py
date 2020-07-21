@@ -12,13 +12,14 @@ import dropbox
 class dropboxApp:
     
     ############################################################
-    def __init__(self,excelName,sheetName,batchSize_GB=400,sleepTime=120,r_wSpeedCutOff=0.5):
+    def __init__(self,excelName,sheetName,dropboxDir,batchSize_GB=200,sleepTime=120,r_wSpeedCutOff=0.5):
         self.excelName = excelName
         self.sheetName = sheetName
-        self.names = ['inputFile','outputDir']
+        self.dropboxDir = dropboxDir
         self.batchSize = batchSize_GB*1024*1024*1024
         self.sleepTime = sleepTime
         self.r_wSpeedCutOff = r_wSpeedCutOff
+        self.names = ['inputFile','outputDir']
         self.df = pandas.read_excel(self.excelName,sheet_name=self.sheetName,names=self.names)
         
         print ('Stage 2 - Data upload')
@@ -153,7 +154,7 @@ class dropboxApp:
     ############################################################
     def storageFree(self):
         free = False
-        availableSpace = psutil.disk_usage(self.dropboxDirList[0]).free
+        availableSpace = psutil.disk_usage(self.dropboxDir).free
         if (availableSpace >= 2*self.batchSize):
             free = True
         else:
