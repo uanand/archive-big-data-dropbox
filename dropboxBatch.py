@@ -7,6 +7,7 @@ import shutil
 import utils
 import time
 import dropbox
+from tqdm import tqdm
 
 ############################################################
 class dropboxApp:
@@ -257,9 +258,9 @@ class dropboxAPI:
     
     ############################################################
     def mkdirs(self):
-        for dropboxDir in dropboxDirList:
+        for dropboxDir in self.dropboxDirList:
             try:
-                self.dbx.files_create_folder(dropboxDirList,autorename=False)
+                self.dbx.files_create_folder(dropboxDir,autorename=False)
             except:
                 pass
     ############################################################
