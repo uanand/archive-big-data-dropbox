@@ -292,6 +292,7 @@ class dropboxAPI:
                                 self.dbx.files_upload_session_append(chunk,cursor.session_id,cursor.offset)
                                 cursor.offset = f.tell()
                     f.close()
+                    os.remove(fileName)
                     self.logFile.write('%s\t%s\t%s\t%.6f GB\tSuccess\n' %(utils.timestamp(),fileName,dropboxFile,fileSize/1024/1024/1024))
                     success=True
                 except:
