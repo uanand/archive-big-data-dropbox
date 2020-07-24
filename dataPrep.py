@@ -6,57 +6,73 @@ from tqdm import tqdm
 
 class dataPrep:
     """ dataPrep class has the following functions and variables
-    Functions :
-        __init__()
-        checkForLargeFiles()
-        getFileList()
-        getFilesinDir()
-        spitFile()
+    
+    Parameters:
+    ----------
+    excelName : str
+        name of the excel file which has the names of files and folders
+        that need to be uploaded to Dropbox.
+    sheetName : str
+        name of the excel sheet that has details of files and folders to
+        be uploaded to Dropbox.
+    fileSizeLimit : float
+        size limit for files. If any file is bigger that this it is
+        split into smaller pieces. Default is 100 GB.
+    chunkSizeSplit : float
+        when splitting files size of chunk to keep in memory. Default is
+        1024 MB.
         
-    Variables :
-        excelName (str)- name of the excel file which has the names of
-            files and folders that need to be uploaded to Dropbox.
-        sheetName (str)- name of the excel sheet that has details of
-            files and folders to be uploaded to Dropbox.
-        fileSizeLimit (float)- size limit for files. If any file is
-            bigger that this it is split into smaller pieces. Default
-            is 100 GB.
-        chunkSizeSplit (float)- when splitting files size of chunk to
-            keep in memory. Default 1024 MB.
-        df (pandas dataframe) - First column has the file name or
-            directory to be uploaded. Second column has the
-            corresponding Dropbox folder name.
-            
+    Methods:
+    -------
+    checkForLargeFiles()
+    getFileList()
+    getFilesinDir(dirName)
+    spitFile(fileName)
+    
+    Attributes:
+    ----------
+    df : pandas dataframe
+        First column has the file name or directory to be uploaded.
+        Second column has the corresponding Dropbox folder name.
+    fileSizeLimit : float
+        size limit for files in bytes.
+    chunkSizeSplit : float
+        size limit for split chunks in bytes.
+    fileNameList : list
+        list of all the files that need to be uploaded.
+    fileSizeList : list
+        list of the size of all the files.
+        
     Usage:
-        import dataPrep
-        
-        # Example 1
-        dp = dataPrep.dataPrep(
-            excelName='inputs.xlsx',
-            sheetName='dropboxUpload_APP',
-            fileSizeLimit_GB=64,
-            chunkSizeSplit_MB=256)
-        The files and directories in excel sheet will be split into
-        smaller pieces if they are larger than 64 GB. During splitting
-        256 MB of data will be loaded into the memory at a time.
-        
-        # Example 2
-        dp = dataPrep.dataPrep(
-            'inputs.xlsx',
-            'dropboxUpload_API')
-        Default values for fileSizeLimit_GB and chunkSizeSplit_MB will
-        be used which are 100 and 1024 respectively.
+    -----
+    import dataPrep
+    
+    # Example 1
+    dp = dataPrep.dataPrep(
+        excelName='inputs.xlsx',
+        sheetName='dropboxUpload_APP',
+        fileSizeLimit_GB=64,
+        chunkSizeSplit_MB=256)
+    The files and directories in excel sheet will be split into
+    smaller pieces if they are larger than 64 GB. During splitting
+    256 MB of data will be loaded into the memory at a time.
+    
+    # Example 2
+    dp = dataPrep.dataPrep(
+        'inputs.xlsx',
+        'dropboxUpload_API')
+    Default values for fileSizeLimit_GB and chunkSizeSplit_MB will
+    be used which are 100 and 1024 respectively.
     """
     
     ####################################################################
     def __init__(self,excelName,sheetName,fileSizeLimit_GB=100,chunkSizeSplit_MB=1024):
-        """ Invoked as soon as an object is initialized. Creates new
-        attribute variables and makes a log file dataPrep.log in the
-        logs directory.
+        """ Creates attribute variables and makes a log file
+        dataPrep.log in the logs directory.
         
-        Call self.self.getFileList() which creates a list of all the
-        files that need to be uploaded on Dropbox.
-        Call self.checkForLargeFiles() which looks at the size of all
+        Calls self.getFileList() which creates a list of all the files
+        that need to be uploaded on Dropbox.
+        Calls self.checkForLargeFiles() which looks at the size of all
         the files and splits them if required.
         """
         
@@ -71,6 +87,7 @@ class dataPrep:
         
         print ('Stage 1 - Data preparation')
         self.logFile = open('logs/dataPrep.log','w')
+        self.logFile.write('%s\tStage 1 - Data preparation\n' %(utils.timestamp()))
         self.getFileList()
         self.checkForLargeFiles()
         self.logFile.close()
@@ -82,14 +99,19 @@ class dataPrep:
         uploaded to Dropbox.
         
         Usage:
-            self.getFileList()
-            
+        -----
+        self.getFileList()
+        
         Returns:
+        -------
             NULL
-            Creates two lists
-            self.fileNameList - List of all the files uploading to
-                Dropbox
-            self.fileSizeList - List of corresponding file size in bytes
+            
+        Creates:
+        -------
+        self.fileNameList : list
+            List of all the files uploading to Dropbox.
+        self.fileSizeList : list
+            List of corresponding file size in bytes.
         """
         
         fileNameList,fileSizeList = [],[]
@@ -113,11 +135,15 @@ class dataPrep:
         """ Creates a list of files inside a directory
         
         Usage:
-            self.getFilesinDir(dir)
-            
+        -----
+        self.getFilesinDir(dir)
+
         Returns:
-            fileNameList - List of all the files inside dir
-            fileSizeList - List of the corresponding file size in bytes
+        -------
+        fileNameList : list
+            List of all the files inside dir.
+        fileSizeList : list
+            List of the corresponding file size in bytes.
         """
         
         fileNameList,fileSizeList = [],[]
@@ -133,14 +159,16 @@ class dataPrep:
     ####################################################################
     def checkForLargeFiles(self):
         """ Scans through all the files in self.fileNameList and splits
-        it if the file size is bigger than self.fileSizeLimit
+        it if the file size is bigger than self.fileSizeLimit. Calls
+        self.splitFile(file) if the file is large.
         
         Usage:
-            self.checkForLargeFiles()
-            
+        -----
+        self.checkForLargeFiles()
+        
         Returns:
-            NULL
-            Calls self.splitFile(file) if the file is large
+        -------
+        NULL
         """
         
         for fileName,fileSize in zip(self.fileNameList,self.fileSizeList):
@@ -151,24 +179,25 @@ class dataPrep:
     ####################################################################
     def splitFile(self,fileName):
         """ Split a large file into smaller pieces. The size of smaller
-        pieces is defined by self.fileSizeLimit
+        pieces is defined by self.fileSizeLimit. Splits the file into
+        chunks of self.fileSizeLimit and saves it in the same directory.
+        fileName_split_0001, fileName_split_0002, ... is added at the
+        end of each split. The original file is deleted after splitting.
         
         Usage:
-            self.splitFile(file)
-            
+        -----
+        self.splitFile(file)
+        
         Returns:
-            NULL
-            Splits the file into chunks of self.fileSizeLimit and saves
-            it in the same directory. fileName_split_0001,
-            fileName_split_0002, ... is added at the end of each split.
-            The original file is deleted after splitting.
+        -------
+        NULL
         """
         
         fileSize = os.path.getsize(fileName)
         numFiles = int(fileSize/self.fileSizeLimit)+1
         print ('Splitting %s into %d parts' %(fileName,numFiles))
         self.logFile.write('%s\tSplit %s into %d parts\n' %(utils.timestamp(),fileName,numFiles))
-        
+
         numChunksToRead,splitNum,chunkNum = int(numpy.ceil(fileSize/self.chunkSizeSplit)),1,0
         outputFileName = fileName
         infile = open(fileName,'rb')
