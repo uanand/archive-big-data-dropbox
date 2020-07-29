@@ -9,22 +9,34 @@ import time
 import dropbox
 from tqdm import tqdm
 
+exclusionList = [
+    'desktop.ini',\
+    'thumbs.db',\
+    '.ds_store',\
+    '.DS_Store',\
+    '._.DS_Store',\
+    '.dropbox',\
+    '.dropbox.attr'\
+    ]
+
 ############################################################
 class dropboxApp:
     
     ############################################################
-    def __init__(self,excelName,sheetName,dropboxDir,batchSize_GB=200,sleepTime=120,r_wSpeedCutOff=0.5):
+    def __init__(self,excelName,sheetName,dropboxDir,batchSize_GB=200,sleepTime=120,r_wSpeedCutOff=0.5,accessToken=False):
         self.excelName = excelName
         self.sheetName = sheetName
         self.dropboxDir = dropboxDir
         self.batchSize = batchSize_GB*1024*1024*1024
         self.sleepTime = sleepTime
         self.r_wSpeedCutOff = r_wSpeedCutOff
+        self.accessToken = accessToken
         self.names = ['inputFile','outputDir']
         self.df = pandas.read_excel(self.excelName,sheet_name=self.sheetName,names=self.names)
         
         print ('Stage 2 - Data upload')
         self.logFile = open('logs/dropboxApp.log','w')
+        self.logFile.write('%s\tStage 2 - Data upload\n' %(utils.timestamp()))
         self.getFileList()
         utils.mkdirs(self.dropboxDirList)
         self.makeBatches()
@@ -34,71 +46,82 @@ class dropboxApp:
     
     ############################################################
     def getFileList(self):
-        fileNameList,fileSizeList,dropboxFileList,dropboxDirList = [],[],[],[]
+        fileNameList,fileSizeList,dropboxFileList,dropboxWebFileList,dropboxDirList = [],[],[],[],[]
         for inputFile,outputDir in self.df.values:
             if (os.path.isfile(inputFile)):
                 fileSize = os.path.getsize(inputFile)
                 fileNameList.append(inputFile)
                 fileSizeList.append(fileSize)
                 dropboxFileList.append(outputDir+'/'+utils.getFileName(inputFile))
+                dropboxWebFileList.append(utils.getDropboxWebFileName(outputDir+'/'+utils.getFileName(inputFile),self.dropboxDir))
                 dropboxDirList.append(outputDir)
             elif (os.path.isdir(inputFile)):
                 inputDir = inputFile
-                tempFileNameList,tempFileSizeList,tempDropboxFileList,tempDropboxDirList = self.getFilesInDir(inputDir,outputDir)
-                for a,b,c,d in zip(tempFileNameList,tempFileSizeList,tempDropboxFileList,tempDropboxDirList):
+                tempFileNameList,tempFileSizeList,tempDropboxFileList,tempDropboxWebFileList,tempDropboxDirList = self.getFilesInDir(inputDir,outputDir)
+                for a,b,c,d,e in zip(tempFileNameList,tempFileSizeList,tempDropboxFileList,tempDropboxWebFileList,tempDropboxDirList):
                     fileNameList.append(a)
                     fileSizeList.append(b)
                     dropboxFileList.append(c)
-                    dropboxDirList.append(d)
+                    dropboxWebFileList.append(d)
+                    dropboxDirList.append(e)
         self.fileNameList = numpy.asarray(fileNameList)
         self.fileSizeList = numpy.asarray(fileSizeList)
         self.dropboxFileList = numpy.asarray(dropboxFileList)
+        self.dropboxWebFileList = numpy.asarray(dropboxWebFileList)
         self.dropboxDirList = numpy.unique(dropboxDirList)
     ############################################################
     
     ############################################################
     def getFilesInDir(self,inputDir,outputDir):
-        fileNameList,fileSizeList,dropboxFileList,dropboxDirList = [],[],[],[]
+        fileNameList,fileSizeList,dropboxFileList,dropboxWebFileList,dropboxDirList = [],[],[],[],[]
         for root,dirs,files in os.walk(inputDir):
             for name in files:
-                fileName = os.path.join(root,name)
-                fileSize = os.path.getsize(fileName)
-                dropboxFile = fileName.replace(inputDir,outputDir)
-                dropboxDir = utils.getDirName(dropboxFile,name)
-                fileNameList.append(fileName)
-                fileSizeList.append(fileSize)
-                dropboxFileList.append(dropboxFile)
-                dropboxDirList.append(dropboxDir)
-        return fileNameList,fileSizeList,dropboxFileList,dropboxDirList
+                if (name not in exclusionList):
+                    fileName = os.path.join(root,name)
+                    fileSize = os.path.getsize(fileName)
+                    dropboxFile = fileName.replace(inputDir,outputDir)
+                    dropboxWebFile = utils.getDropboxWebFileName(dropboxFile,self.dropboxDir)
+                    dropboxDir = utils.getDirName(dropboxFile,name)
+                    fileNameList.append(fileName)
+                    fileSizeList.append(fileSize)
+                    dropboxFileList.append(dropboxFile)
+                    dropboxWebFileList.append(dropboxWebFile)
+                    dropboxDirList.append(dropboxDir)
+        return fileNameList,fileSizeList,dropboxFileList,dropboxWebFileList,dropboxDirList
     ############################################################
     
     ############################################################
     def makeBatches(self):
-        fileNameBatch,fileSizeBatch,dropboxFileBatch = [],[],[]
-        l1,l2,l3,totalSize = [],[],[],0
+        fileNameBatch,fileSizeBatch,dropboxFileBatch,dropboxWebFileBatch = [],[],[],[]
+        l1,l2,l3,l4,totalSize = [],[],[],[],0
         lastFileIncluded = False
-        for fileName,fileSize,dropboxFile in zip(self.fileNameList,self.fileSizeList,self.dropboxFileList):
+        for fileName,fileSize,dropboxFile,dropboxWebFile in zip(self.fileNameList,self.fileSizeList,self.dropboxFileList,self.dropboxWebFileList):
             totalSize += fileSize
             if (totalSize <= self.batchSize):
                 l1.append(fileName)
                 l2.append(fileSize)
                 l3.append(dropboxFile)
+                l4.append(dropboxWebFile)
             elif (totalSize > self.batchSize):
                 fileNameBatch.append(l1)
                 fileSizeBatch.append(l2)
                 dropboxFileBatch.append(l3)
-                l1,l2,l3,totalSize = [],[],[],0
+                dropboxWebFileBatch.append(l4)
+                l1,l2,l3,l4,totalSize = [],[],[],[],0
                 l1.append(fileName)
                 l2.append(fileSize)
                 l3.append(dropboxFile)
+                l4.append(dropboxWebFile)
                 totalSize += fileSize
             if (fileName == self.fileNameList[-1]):
                 fileNameBatch.append(l1)
                 fileSizeBatch.append(l2)
                 dropboxFileBatch.append(l3)
+                dropboxWebFileBatch.append(l4)
         self.fileNameBatch = fileNameBatch
         self.fileSizeBatch = fileSizeBatch
         self.dropboxFileBatch = dropboxFileBatch
+        self.dropboxWebFileBatch = dropboxWebFileBatch
         self.numBatches = len(fileNameBatch)
     ############################################################
     
@@ -108,6 +131,8 @@ class dropboxApp:
             resourceAvailable = False
             while (resourceAvailable == False):
                 resourceAvailable = self.checkResource()
+            if (self.accessToken and i>0):
+                self.checkFilesOnWebsite(self.dropboxWebFileBatch[i-1],self.accessToken)
             print ('Uploading batch %d/%d' %(i+1,self.numBatches))
             self.logFile.write('%s\tUploading batch %d/%d\n' %(utils.timestamp(),i+1,self.numBatches))
             for fileName,fileSize,dropboxFile in zip(self.fileNameBatch[i],self.fileSizeBatch[i],self.dropboxFileBatch[i]):
@@ -189,8 +214,19 @@ class dropboxApp:
     
     ############################################################
     def dropboxStorageFree(self):
-        # TODO - most likely will need API access for this
+        # TODO - Will need Dropbox API access for this
         pass
+    ############################################################
+    
+    ############################################################
+    def checkFilesOnWebsite(self,fileNameList,accessToken):
+        dbx = dropbox.Dropbox(accessToken)
+        for fileName in fileNameList:
+            try:
+                tt = dbx.files_get_metadata(fileName)
+            except:
+                input('%s not uploaded. Make sure to finish batch sync and press enter.' %(fileName))
+                break
     ############################################################
 ############################################################
 
@@ -209,7 +245,7 @@ class dropboxAPI:
         
         print ('Stage 2 - Data upload using API')
         self.logFile = open('logs/dropboxAPI.log','w')
-        self.dbx = dropbox.Dropbox(accessToken,timeout=900)
+        self.dbx = dropbox.Dropbox(accessToken)
         self.getFileList()
         self.mkdirs()
         self.uploadFiles()
@@ -245,14 +281,15 @@ class dropboxAPI:
         fileNameList,fileSizeList,dropboxFileList,dropboxDirList = [],[],[],[]
         for root,dirs,files in os.walk(inputDir):
             for name in files:
-                fileName = os.path.join(root,name)
-                fileSize = os.path.getsize(fileName)
-                dropboxFile = fileName.replace(inputDir,outputDir)
-                dropboxDir = utils.getDirName(dropboxFile,name)
-                fileNameList.append(fileName)
-                fileSizeList.append(fileSize)
-                dropboxFileList.append(dropboxFile)
-                dropboxDirList.append(dropboxDir)
+                if (name not in exclusionList):
+                    fileName = os.path.join(root,name)
+                    fileSize = os.path.getsize(fileName)
+                    dropboxFile = fileName.replace(inputDir,outputDir)
+                    dropboxDir = utils.getDirName(dropboxFile,name)
+                    fileNameList.append(fileName)
+                    fileSizeList.append(fileSize)
+                    dropboxFileList.append(dropboxFile)
+                    dropboxDirList.append(dropboxDir)
         return fileNameList,fileSizeList,dropboxFileList,dropboxDirList
     ############################################################
     
