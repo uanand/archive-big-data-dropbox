@@ -138,3 +138,33 @@ def combineLogs():
         os.remove(log)
     logFile.close()
 ############################################################
+
+############################################################
+def getDropboxWebFileName(localDropboxFile,localDropboxDir):
+    """ Get the path of the file on Dropbox cloud. If the path of the
+    local file is D:\Dropbox\Data\test\image_0001.png, then the
+    corresponding file name on Dropbox cloud is
+    /Data/test/image_0001.png 
+    
+    Parameters:
+    ----------
+    localDropboxFile : str
+        File name with path of the local Dropbox file. 
+    localDropboxDir : str
+        Location of Dropbox directory on the local machine. 
+        
+    Returns:
+    -------
+    fileName : str
+        File name with path on Dropbox cloud.
+    
+    Usage:
+    -----
+    getDropboxWebFileName(localDropboxFile,localDropboxDir)
+    """
+    
+    fileName = localDropboxFile.replace(localDropboxDir,'')
+    if (platform.system()=='Windows'):
+        fileName = fileName.replace('\\','/')
+    return fileName
+############################################################
