@@ -21,22 +21,122 @@ exclusionList = [
 
 ############################################################
 class dropboxApp:
+    """ dropboxApp class has the following functions and variables
+    
+    Parameters:
+    ----------
+    excelName : str
+        name of the excel file which has the names of files and folders
+        that need to be uploaded to Dropbox.
+    sheetName : str
+        name of the excel sheet that has details of files and folders to
+        be uploaded to Dropbox.
+    dropboxDir : str
+        location of the local Dropbox directory.
+    batchSize_GB : float
+        Size of each upload batch in GB. Default is 200 GB.
+    sleepTime : float
+        Duration in seconds after which sync check is performed. Default
+        is 120 s. If Dropbox is busy then the same batch will continue
+        to upload. Otherwise, work on next batch is started.
+    r_wSpeedCutOff : float
+        Average disk r/w speed cutoff to check Dropbox availability. If
+        r/w < 0.5 (Default), Dropbox is free to work on next batch,
+        otherwise uploading of same batch continues.
+    accessToken : str
+        Access token to access Dropbox using API.
+        
+    Methods:
+    -------
+    getFileList()
+    getFilesInDir(inputDir,outputDir)
+    makeBatches()
+    uploadFiles()
+    checkResource()
+    droboxFree()
+    storageFree()
+    dropboxRunning()
+    dropboxStorageFree()
+    checkFilesOnWebsite(fileNameList,accessToken)
+    
+    Attributes:
+    ----------
+    df : pandas dataframe
+        First column has the file name or directory to be uploaded.
+        Second column has the corresponding Dropbox folder name.
+    dropboxDir : str
+        Location of local Dropbox directory.
+    batchSize : float
+        Maximum size (in bytes) of a batch during upload.
+    sleepTime : float
+        Time interval in seconds between when the r/w speed of Dropbox
+        application is calculated.
+    r_wSpeedCutOff : float
+        Cutoff speed below which it is assumed Dropbox is available to
+        upload the next batch.
+    accessToken : str
+        For API access for additional check file upload.
+    fileNameList : array of string
+        List of all the files to be uploaded to Dropbox.
+    fileSizeList : array of float
+        Corresponding size in bytes of all the files.
+    dropboxFileList : array of str
+        Corresponsing file name with full path for the Dropbox
+        directory.
+    dropboxWebFileList : array of str
+        Corresponding file name with full path on the Dropbox servers.
+    dropboxDirList : array of str
+        List of directories in the Dropbox folder that need to be
+        created before data upload start.
+        
+    Usage:
+    -----
+    import dropboxBatch
+    
+    # Example 1
+    dbx = dropboxBatch.dropboxApp(
+            excelName='inputs.xlsx',,
+            sheetName='dropboxUpload_APP',
+            dropboxDir=r'E:\Dropbox',
+            accessToken='***********',
+            batchSize_GB=20,
+            sleepTime_s=150,
+            r_wSpeedCutOff=1)
+    The files and directories in excel sheet will be split batches of 20
+    GB and uploaded to Dropbox sequentially. The next batch does not
+    start until the current batch is fully uploaded.
+    
+    # Example 2
+    dbx = dropboxBatch.dropboxApp(
+            excelName='inputs.xlsx',,
+            sheetName='dropboxUpload_APP',
+            dropboxDir=r'E:\Dropbox',
+            accessToken='***********')
+    Default values for batchSize_GB, sleepTime_s, and r_wSpeedCutOff
+    are used which are 200, 120, and 0.5 respectively.
+    """
     
     ############################################################
-    def __init__(self,excelName,sheetName,dropboxDir,batchSize_GB=200,sleepTime=120,r_wSpeedCutOff=0.5,accessToken=False):
+    def __init__(self,excelName,sheetName,dropboxDir,accessToken,batchSize_GB=200,sleepTime=120,r_wSpeedCutOff=0.5):
+        """ Creates attribute variables and makes a log file
+        dropboxApp.log in the logs directory.
+        
+        Uploads files to Dropbox using the desktop APP in batches.
+        """
+        
         self.excelName = excelName
         self.sheetName = sheetName
         self.dropboxDir = dropboxDir
+        self.accessToken = accessToken
         self.batchSize = batchSize_GB*1024*1024*1024
         self.sleepTime = sleepTime
         self.r_wSpeedCutOff = r_wSpeedCutOff
-        self.accessToken = accessToken
         self.names = ['inputFile','outputDir']
         self.df = pandas.read_excel(self.excelName,sheet_name=self.sheetName,names=self.names)
         
-        print ('Stage 2 - Data upload')
+        print ('Stage 2 - Data upload using APP')
         self.logFile = open('logs/dropboxApp.log','w')
-        self.logFile.write('%s\tStage 2 - Data upload\n' %(utils.timestamp()))
+        self.logFile.write('%s\tStage 2 - Data upload using APP\n' %(utils.timestamp()))
         self.getFileList()
         utils.mkdirs(self.dropboxDirList)
         self.makeBatches()
@@ -46,6 +146,34 @@ class dropboxApp:
     
     ############################################################
     def getFileList(self):
+        """ Use self.df to generate the list of files that need to be
+        uploaded to Dropbox. In addition to this the corresponding
+        file size, file on local Dropbox, file on Dropbox website, and
+        the new directories on local Dropbox that need to be made are
+        created.
+        
+        Usage:
+        -----
+        self.getFileList()
+        
+        Returns:
+        -------
+            NULL
+            
+        Creates:
+        -------
+        self.fileNameList : array of str
+            List of all the files uploading to Dropbox.
+        self.fileSizeList : array of float
+            List of corresponding file size in bytes.
+        self.dropboxFileList : array of str
+            List of corresponding files with local Dropbox path.
+        self.dropboxWebFileList : array of str
+            List of corresponding files with cloud Dropbox path.
+        self.dropboxDirList : array of str
+            List of local Dropbox directories that need to be created.
+        """
+        
         fileNameList,fileSizeList,dropboxFileList,dropboxWebFileList,dropboxDirList = [],[],[],[],[]
         for inputFile,outputDir in self.df.values:
             if (os.path.isfile(inputFile)):
@@ -73,6 +201,27 @@ class dropboxApp:
     
     ############################################################
     def getFilesInDir(self,inputDir,outputDir):
+        """ Creates a list of files inside a directory and the
+        corresponding files in the local Dropbox directory.
+        
+        Usage:
+        -----
+        self.getFilesinDir(inputDir,targetDir)
+
+        Returns:
+        -------
+        fileNameList : array of str
+            List of all the files uploading to Dropbox.
+        fileSizeList : array of float
+            List of corresponding file size in bytes.
+        dropboxFileList : array of str
+            List of corresponding files with local Dropbox path.
+        dropboxWebFileList : array of str
+            List of corresponding files with cloud Dropbox path.
+        dropboxDirList : array of str
+            List of local Dropbox directories that need to be created.
+        """
+        
         fileNameList,fileSizeList,dropboxFileList,dropboxWebFileList,dropboxDirList = [],[],[],[],[]
         for root,dirs,files in os.walk(inputDir):
             for name in files:
@@ -92,6 +241,32 @@ class dropboxApp:
     
     ############################################################
     def makeBatches(self):
+        """ Splits the files to upload into smaller batches of size
+        self.batchSize.
+        
+        Usage:
+        -----
+        self.makeBatches()
+
+        Returns:
+        -------
+        NULL
+        
+        Creates:
+        -------
+        self.fileNameBatch : list of list of str
+            List of files split in batches. Each list element contains
+            an array of files in a single batch.
+        self.fileSizeBatch : list of list of float
+            Corresponding file sizes.
+        self.dropboxFileBatch : list of list of str
+            Corresponding local Dropbox file name with full path.
+        self.dropboxWebFileBatch : list of list of str
+            Corresponding Dropbox cloud file name with full path.
+        self.numBatches : float
+            Total number of batches to be uploaded.
+        """
+        
         fileNameBatch,fileSizeBatch,dropboxFileBatch,dropboxWebFileBatch = [],[],[],[]
         l1,l2,l3,l4,totalSize = [],[],[],[],0
         lastFileIncluded = False
@@ -127,11 +302,27 @@ class dropboxApp:
     
     ############################################################
     def uploadFiles(self):
+        """ Uploads the batches using Dropbox App one by one.
+        self.checkResource() is called repeatedly. If resources are
+        available it a second verification is done if the files from
+        current batch have uploaded successfully using
+        self.checkFilesOnWebsite(). Only then, the next batch is
+        submitted for upload. 
+        
+        Usage:
+        -----
+        self.uploadFiles()
+
+        Returns:
+        -------
+        NULL
+        """
+        
         for i in range(self.numBatches):
             resourceAvailable = False
             while (resourceAvailable == False):
                 resourceAvailable = self.checkResource()
-            if (self.accessToken and i>0):
+            if (i>0):
                 self.checkFilesOnWebsite(self.dropboxWebFileBatch[i-1],self.accessToken)
             print ('Uploading batch %d/%d' %(i+1,self.numBatches))
             self.logFile.write('%s\tUploading batch %d/%d\n' %(utils.timestamp(),i+1,self.numBatches))
@@ -143,15 +334,41 @@ class dropboxApp:
     
     ############################################################
     def checkResource(self):
+        """ Check if (1) Dropbox is running, (2) Hard drive space is
+        available, and (3) Dropbox is not busy with other tasks. If all
+        the conditions are met, function return True otherwise False. 
+        
+        Usage:
+        -----
+        self.checkResource()
+
+        Returns:
+        -------
+        bool (True/False)
+        """
+        
         resourceAvailable = False
         if (self.dropboxRunning() and self.storageFree()): # and self.dropboxStorageFree()
-            if (self.droboxFree()):
+            if (self.dropboxFree()):
                 resourceAvailable = True
         return resourceAvailable
     ############################################################
     
     ############################################################
-    def droboxFree(self):
+    def dropboxFree(self):
+        """ Checks the memory r/w operations by Dropbox processes in an
+        interval of self.sleepTime. If the average r/w operations speed
+        is less than self.r_wSpeedCutOff return True otherwise False.
+        
+        Usage:
+        -----
+        self.dropboxFree()
+
+        Returns:
+        -------
+        bool (True/False)
+        """
+        
         free,failed = False,False
         read_speed,write_speed = 0,0
         try:
@@ -179,6 +396,18 @@ class dropboxApp:
     
     ############################################################
     def storageFree(self):
+        """ Checks availability of hard drive space. If there is space
+        to proceed with the next batch returns True otherwise False.
+        
+        Usage:
+        -----
+        self.storageFree()
+
+        Returns:
+        -------
+        bool (True/False)
+        """
+        
         free = False
         availableSpace = psutil.disk_usage(self.dropboxDir).free
         if (availableSpace >= 2*self.batchSize):
@@ -191,6 +420,17 @@ class dropboxApp:
     
     ############################################################
     def dropboxRunning(self):
+        """ Checks if Dropbox is running properly.
+        
+        Usage:
+        -----
+        self.dropboxRunning()
+
+        Returns:
+        -------
+        bool (True/False)
+        """
+        
         # TODO - detailed testing of dropbox on linux
         running = False
         counter = 0
@@ -220,6 +460,22 @@ class dropboxApp:
     
     ############################################################
     def checkFilesOnWebsite(self,fileNameList,accessToken):
+        """ Checks if all the files in current batch have been properly
+        uploaded to cloud. If not, then the program pauses and waits for
+        user to make sure Dropbox is running smoothly and batch sync is
+        complete. The functions accepts two arguments - list of files on
+        Dropbox cloud that need to be checked, and the accessToken to
+        access the files using Dropbox API.
+        
+        Usage:
+        -----
+        self.checkFilesOnWebsite(fileNameList,accessToken)
+
+        Returns:
+        -------
+        NULL
+        """
+        
         dbx = dropbox.Dropbox(accessToken)
         for fileName in fileNameList:
             try:
@@ -245,6 +501,7 @@ class dropboxAPI:
         
         print ('Stage 2 - Data upload using API')
         self.logFile = open('logs/dropboxAPI.log','w')
+        self.logFile.write('%s\tStage 2 - Data upload using API\n' %(utils.timestamp()))
         self.dbx = dropbox.Dropbox(accessToken)
         self.getFileList()
         self.mkdirs()
