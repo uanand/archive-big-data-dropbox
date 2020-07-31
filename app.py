@@ -22,7 +22,7 @@ chunkSize_MB = 128 # in MB
 
 dp = dataPrep.dataPrep(excelName,sheetName,fileSizeLimit_GB,chunkSizeSplit_MB)
 if ('APP' in sheetName):
-    dbx = dropboxBatch.dropboxApp(excelName,sheetName,dropboxDir,batchSize_GB,sleepTime_s,r_wSpeedCutOff,accessToken)
+    dbx = dropboxBatch.dropboxApp(excelName,sheetName,dropboxDir,accessToken,batchSize_GB,sleepTime_s,r_wSpeedCutOff)
 elif ('API' in sheetName):
     dbx = dropboxBatch.dropboxAPI(excelName,sheetName,accessToken,chunkSize_MB)
 utils.combineLogs()
