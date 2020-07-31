@@ -207,7 +207,7 @@ class dropboxApp:
         Usage:
         -----
         self.getFilesinDir(inputDir,targetDir)
-
+        
         Returns:
         -------
         fileNameList : array of str
@@ -247,7 +247,7 @@ class dropboxApp:
         Usage:
         -----
         self.makeBatches()
-
+        
         Returns:
         -------
         NULL
@@ -307,12 +307,12 @@ class dropboxApp:
         available it a second verification is done if the files from
         current batch have uploaded successfully using
         self.checkFilesOnWebsite(). Only then, the next batch is
-        submitted for upload. 
+        submitted for upload.
         
         Usage:
         -----
         self.uploadFiles()
-
+        
         Returns:
         -------
         NULL
@@ -341,7 +341,7 @@ class dropboxApp:
         Usage:
         -----
         self.checkResource()
-
+        
         Returns:
         -------
         bool (True/False)
@@ -363,7 +363,7 @@ class dropboxApp:
         Usage:
         -----
         self.dropboxFree()
-
+        
         Returns:
         -------
         bool (True/False)
@@ -402,7 +402,7 @@ class dropboxApp:
         Usage:
         -----
         self.storageFree()
-
+        
         Returns:
         -------
         bool (True/False)
@@ -425,7 +425,7 @@ class dropboxApp:
         Usage:
         -----
         self.dropboxRunning()
-
+        
         Returns:
         -------
         bool (True/False)
@@ -470,7 +470,7 @@ class dropboxApp:
         Usage:
         -----
         self.checkFilesOnWebsite(fileNameList,accessToken)
-
+        
         Returns:
         -------
         NULL
@@ -489,9 +489,78 @@ class dropboxApp:
 
 ############################################################
 class dropboxAPI:
+    """ dropboxAPI class has the following functions and variables
+    
+    Parameters:
+    ----------
+    excelName : str
+        name of the excel file which has the names of files and folders
+        that need to be uploaded to Dropbox.
+    sheetName : str
+        name of the excel sheet that has details of files and folders to
+        be uploaded to Dropbox.
+    accessToken : str
+        Access token to access Dropbox using API.
+    chunkSize_MB : float
+        A large file will be uploaded in smaller pieces of a size
+        defined by this.
+        
+    Methods:
+    -------
+    getFileList()
+    getFilesInDir(inputDir,outputDir)
+    mkdirs()
+    uploadFiles()
+    dropboxStorageFree()
+    
+    Attributes:
+    ----------
+    df : pandas dataframe
+        First column has the file name or directory to be uploaded.
+        Second column has the corresponding Dropbox folder name.
+    accessToken : str
+        For API access for additional check file upload.
+    fileNameList : array of string
+        List of all the files to be uploaded to Dropbox.
+    fileSizeList : array of float
+        Corresponding size in bytes of all the files.
+    dropboxFileList : array of str
+        Corresponsing file name with full path for the cloud Dropbox
+        directory.
+    dropboxDirList : array of str
+        List of directories in the Dropbox folder that need to be
+        created before data upload start.
+        
+    Usage:
+    -----
+    import dropboxBatch
+    
+    # Example 1
+    dbx = dropboxBatch.dropboxAPI(
+            excelName='inputs.xlsx',,
+            sheetName='dropboxUpload_API',
+            accessToken='***********',
+            chunkSize_MB=150)
+    The files and directories in excel sheet will uploaded directly to
+    Dropbox. Large files will be uploaded in multiple smaller pieces of
+    size 150 MB.
+    
+    # Example 2
+    dbx = dropboxBatch.dropboxApp(
+            excelName='inputs.xlsx',,
+            sheetName='dropboxUpload_API',
+            accessToken='***********')
+    Default values for chunkSize_MB = 128 will be used during upload.
+    """
     
     ############################################################
     def __init__(self,excelName,sheetName,accessToken,chunkSize_MB):
+        """ Creates attribute variables and makes a log file
+        dropboxAPI.log in the logs directory.
+        
+        Uploads files sequentially to Dropbox using API.
+        """
+        
         self.excelName = excelName
         self.sheetName = sheetName
         self.names = ['inputFile','outputDir']
@@ -511,6 +580,31 @@ class dropboxAPI:
     
     ############################################################
     def getFileList(self):
+        """ Use self.df to generate the list of files that need to be
+        uploaded to Dropbox. In addition to this the corresponding
+        file size, file on Dropbox cloud, and the new directories on
+        cloud Dropbox that need to be made are created.
+        
+        Usage:
+        -----
+        self.getFileList()
+        
+        Returns:
+        -------
+        NULL
+            
+        Creates:
+        -------
+        self.fileNameList : array of str
+            List of all the files uploading to Dropbox.
+        self.fileSizeList : array of float
+            List of corresponding file size in bytes.
+        self.dropboxFileList : array of str
+            List of corresponding files with cloud Dropbox path.
+        self.dropboxDirList : array of str
+            List of cloud Dropbox directories that need to be created.
+        """
+        
         fileNameList,fileSizeList,dropboxFileList,dropboxDirList = [],[],[],[]
         for inputFile,outputDir in self.df.values:
             if (os.path.isfile(inputFile)):
@@ -535,6 +629,25 @@ class dropboxAPI:
     
     ############################################################
     def getFilesInDir(self,inputDir,outputDir):
+        """ Creates a list of files inside a directory and the
+        corresponding files in the local Dropbox directory.
+        
+        Usage:
+        -----
+        self.getFilesinDir(inputDir,targetDir)
+        
+        Returns:
+        -------
+        fileNameList : array of str
+            List of all the files uploading to Dropbox.
+        fileSizeList : array of float
+            List of corresponding file size in bytes.
+        dropboxFileList : array of str
+            List of corresponding files with cloud Dropbox path.
+        dropboxDirList : array of str
+            List of cloud Dropbox directories that need to be created.
+        """
+        
         fileNameList,fileSizeList,dropboxFileList,dropboxDirList = [],[],[],[]
         for root,dirs,files in os.walk(inputDir):
             for name in files:
@@ -552,6 +665,17 @@ class dropboxAPI:
     
     ############################################################
     def mkdirs(self):
+        """ Creates a list of directories on Dropbox cloud.
+        
+        Usage:
+        -----
+        self.mkdirs()
+        
+        Returns:
+        -------
+        NULL
+        """
+        
         for dropboxDir in self.dropboxDirList:
             try:
                 self.dbx.files_create_folder(dropboxDir,autorename=False)
@@ -561,9 +685,23 @@ class dropboxAPI:
     
     ############################################################
     def uploadFiles(self):
+        """ Uploads files to cloud using Dropbox API. If the upload
+        fails, it is attempted again for a maximum of three times
+        before moving on to the next file. A large file is read in
+        smaller chunks and uploaded.
+        
+        Usage:
+        -----
+        self.uploadFiles()
+        
+        Returns:
+        -------
+        NULL
+        """
+        
         for fileName,fileSize,dropboxFile in zip(self.fileNameList,self.fileSizeList,self.dropboxFileList):
             if not(self.dropboxStorageFree(fileSize)):
-                input('Dropbox full. Make sure you have enough space and press enter.')
+                input('Dropbox cloud full. Make sure you have enough space and press enter.')
                 
             print ('Uploading %s\tto\t%s' %(fileName,dropboxFile))
             numChunks = int(numpy.ceil(fileSize/self.chunkSize))
