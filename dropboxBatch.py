@@ -12,6 +12,7 @@ from tqdm import tqdm
 exclusionList = [
     'desktop.ini',\
     'thumbs.db',\
+    'Thumbs.db',\
     '.ds_store',\
     '.DS_Store',\
     '._.DS_Store',\
@@ -319,6 +320,7 @@ class dropboxApp:
         """
         
         for i in range(self.numBatches):
+            self.dropboxNotRunningCounter,self.fileNotOnDropboxCounter = 0,0
             resourceAvailable = False
             while (resourceAvailable == False):
                 resourceAvailable = self.checkResource()
@@ -351,6 +353,7 @@ class dropboxApp:
         if (self.dropboxRunning() and self.storageFree()): # and self.dropboxStorageFree()
             if (self.dropboxFree()):
                 resourceAvailable = True
+        time.sleep(self.sleepTime)
         return resourceAvailable
     ############################################################
     
@@ -433,21 +436,27 @@ class dropboxApp:
         
         # TODO - detailed testing of dropbox on linux
         running = False
-        counter = 0
-        if (platform.system()=='Windows'):
-            for process in psutil.process_iter():
-                if (process.name() == 'Dropbox.exe'):
-                    counter += 1
-            if (counter==3):
-                running = True
-        elif (platform.system()=='Linux'):
-            for process in psutil.process_iter():
-                if (process.name() == 'dropbox'):
-                    counter += 1
-            if (counter>=1):
-                running = True
-        if (running==False):
-            self.logFile.write('%s\tDropbox not running\n' %(utils.timestamp()))
+        try:
+            counter = 0
+            if (platform.system()=='Windows'):
+                for process in psutil.process_iter():
+                    if (process.name() == 'Dropbox.exe'):
+                        counter += 1
+                if (counter==3):
+                    running = True
+            elif (platform.system()=='Linux'):
+                for process in psutil.process_iter():
+                    if (process.name() == 'dropbox'):
+                        counter += 1
+                if (counter>=1):
+                    running = True
+        except:
+            self.dropboxNotRunningCounter += 1
+        # if (running==False):
+            # self.logFile.write('%s\tDropbox not running\n' %(utils.timestamp()))
+            # input('Dropbox not running. Make sure to start application. Press enter to continue after application starts.')
+        if (self.dropboxNotRunningCounter >= 10):
+            self.logFile.write('%s\tDropbox not running.\n' %(utils.timestamp()))
             input('Dropbox not running. Make sure to start application. Press enter to continue after application starts.')
         return running
     ############################################################
@@ -477,12 +486,26 @@ class dropboxApp:
         """
         
         dbx = dropbox.Dropbox(accessToken)
-        for fileName in fileNameList:
-            try:
-                tt = dbx.files_get_metadata(fileName)
-            except:
-                input('%s not uploaded. Make sure to finish batch sync and press enter.' %(fileName))
+        while (self.fileNotOnDropboxCounter < 10):
+            allFilesUploadedFlag = True
+            for fileName in fileNameList:
+                try:
+                    tt = dbx.files_get_metadata(fileName)
+                except:
+                    allFilesUploadedFlag = False
+                    self.fileNotOnDropboxCounter += 1
+                    break
+                    
+            if (allFilesUploadedFlag == True):
                 break
+                
+            time.sleep(self.sleepTime)
+            dropBoxFreeFlag = False
+            while (dropBoxFreeFlag == False):
+                dropBoxFreeFlag = self.dropBoxFree()
+        if (self.fileNotOnDropboxCounter >= 10):
+            self.logFile.write('%s\tCurrent batch upload incomplete.\n' %(utils.timestamp()))
+            input('Batch not uploaded. Make sure to finish batch sync and press enter.')
     ############################################################
 ############################################################
 
