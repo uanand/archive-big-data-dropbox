@@ -350,69 +350,6 @@ class dropboxApp:
     ############################################################
     
     ############################################################
-    def checkResource(self):
-        """ Check if (1) Dropbox is running, (2) Hard drive space is
-        available, and (3) Dropbox is not busy with other tasks. If all
-        the conditions are met, function return True otherwise False. 
-        
-        Usage:
-        -----
-        self.checkResource()
-        
-        Returns:
-        -------
-        bool (True/False)
-        """
-        
-        resourceAvailable = False
-        if (self.dropboxRunning() and self.storageFree()): # and self.dropboxStorageFree()
-            if (self.dropboxFree()):
-                resourceAvailable = True
-        time.sleep(self.sleepTime)
-        return resourceAvailable
-    ############################################################
-    
-    ############################################################
-    def dropboxFree(self):
-        """ Checks the memory r/w operations by Dropbox processes in an
-        interval of self.sleepTime. If the average r/w operations speed
-        is less than self.r_wSpeedCutOff return True otherwise False.
-        
-        Usage:
-        -----
-        self.dropboxFree()
-        
-        Returns:
-        -------
-        bool (True/False)
-        """
-        
-        free,failed = False,False
-        read_speed,write_speed = 0,0
-        try:
-            for process in psutil.process_iter():
-                if (platform.system() == 'Windows'):
-                    processName = 'Dropbox.exe'
-                elif (platform.system() == 'Linux'):
-                    processName = 'dropbox'
-                if (process.name() == processName):
-                    read_bytes_0 = process.io_counters().read_bytes
-                    write_bytes_0 = process.io_counters().write_bytes
-                    time.sleep(self.sleepTime)
-                    read_bytes_1 = process.io_counters().read_bytes
-                    write_bytes_1 = process.io_counters().write_bytes
-                    read_speed = max(read_speed,(read_bytes_1-read_bytes_0)/1024/1024/self.sleepTime)
-                    write_speed = max(write_speed,(write_bytes_1-write_bytes_0)/1024/1024/self.sleepTime)
-        except:
-            failed = True
-        if (failed==True):
-            free = False
-        elif (read_speed < self.r_wSpeedCutOff and write_speed < self.r_wSpeedCutOff):
-            free = True
-        return free
-    ############################################################
-    
-    ############################################################
     def storageFree(self):
         """ Checks availability of hard drive space. If there is space
         to proceed with the next batch returns True otherwise False.
@@ -434,46 +371,6 @@ class dropboxApp:
             self.logFile.write('%s\tDisk full\n' %(utils.timestamp()))
             input('Disk is full. Move data to online-only mode. Press enter to continue after more space is available.')
         return free
-    ############################################################
-    
-    ############################################################
-    def dropboxRunning(self):
-        """ Checks if Dropbox is running properly.
-        
-        Usage:
-        -----
-        self.dropboxRunning()
-        
-        Returns:
-        -------
-        bool (True/False)
-        """
-        
-        # TODO - detailed testing of dropbox on linux
-        running = False
-        try:
-            counter = 0
-            if (platform.system()=='Windows'):
-                for process in psutil.process_iter():
-                    if (process.name() == 'Dropbox.exe'):
-                        counter += 1
-                if (counter==3):
-                    running = True
-            elif (platform.system()=='Linux'):
-                for process in psutil.process_iter():
-                    if (process.name() == 'dropbox'):
-                        counter += 1
-                if (counter>=1):
-                    running = True
-        except:
-            self.dropboxNotRunningCounter += 1
-        # if (running==False):
-            # self.logFile.write('%s\tDropbox not running\n' %(utils.timestamp()))
-            # input('Dropbox not running. Make sure to start application. Press enter to continue after application starts.')
-        if (self.dropboxNotRunningCounter >= 10):
-            self.logFile.write('%s\tDropbox not running.\n' %(utils.timestamp()))
-            input('Dropbox not running. Make sure to start application. Press enter to continue after application starts.')
-        return running
     ############################################################
     
     ############################################################
