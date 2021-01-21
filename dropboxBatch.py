@@ -118,7 +118,7 @@ class dropboxApp:
     """
     
     ############################################################
-    def __init__(self,excelName,sheetName,dropboxDir,accessToken,batchSize_GB=200,sleepTime=120,r_wSpeedCutOff=0.5):
+    def __init__(self,excelName,sheetName,dropboxDir,accessToken,batchSize_GB=500,sleepTime_min=30,batchTimeLimit_hour=12):
         """ Creates attribute variables and makes a log file
         dropboxApp.log in the logs directory.
         
@@ -130,20 +130,20 @@ class dropboxApp:
         self.dropboxDir = dropboxDir
         self.accessToken = accessToken
         self.batchSize = batchSize_GB*1024*1024*1024
-        self.sleepTime = sleepTime
-        self.r_wSpeedCutOff = r_wSpeedCutOff
+        self.sleepTime_min = sleepTime_min
+        self.batchTimeLimit_hour = batchTimeLimit_hour
         self.names = ['inputFile','outputDir']
         self.df = pandas.read_excel(self.excelName,sheet_name=self.sheetName,names=self.names)
+        self.dbx = dropbox.Dropbox(self.accessToken)
         
         print ('Stage 2 - Data upload using APP')
         self.logFile = open('logs/dropboxApp.log','w')
-        self.logFile.write('%s\tStage 2 - Data upload using APP\n' %(utils.timestamp()))
+        self.logFile.write('%s\tData upload using APP\n' %(utils.timestamp()))
         self.getFileList()
         utils.mkdirs(self.dropboxDirList)
         self.makeBatches()
         self.uploadFiles()
         self.logFile.close()
-        self.dbx = dropbox.Dropbox(self.accessToken)
     ############################################################
     
     ############################################################
@@ -321,32 +321,22 @@ class dropboxApp:
         """
         
         for i in range(self.numBatches):
+            self.storageFree()
+            print ('Uploading batch %d/%d' %(i+1,self.numBatches))
+            self.logFile.write('%s\tUploading batch %d/%d\n' %(utils.timestamp(),i+1,self.numBatches))
             tic = time.time()
             for fileName,fileSize,dropboxFile in zip(self.fileNameBatch[i],self.fileSizeBatch[i],self.dropboxFileBatch[i]):
                 print ('Moving %s\tto\t%s' %(fileName,dropboxFile))
                 self.logFile.write('%s\t%s\t%s\t%.6f GB\n' %(utils.timestamp(),fileName,dropboxFile,fileSize/1024/1024/1024))
                 shutil.move(fileName,dropboxFile)
             while (uploadStatus==False):
+                time.sleep(self.sleepTime_min*60)
                 uploadStatus = self.checkFilesOnWebsite(self.dropboxWebFileBatch[i-1])
-                
-            
-            
-            self.fileNameListLeft = numpy.asarray(fileNameList)
-            self.dropboxWebFileListLeft = numpy.asarray(dropboxWebFileList)
-        
-        for i in range(self.numBatches):
-            self.dropboxNotRunningCounter,self.fileNotOnDropboxCounter = 0,0
-            resourceAvailable = False
-            while (resourceAvailable == False):
-                resourceAvailable = self.checkResource()
-            if (i>0):
-                self.checkFilesOnWebsite(self.dropboxWebFileBatch[i-1])
-            print ('Uploading batch %d/%d' %(i+1,self.numBatches))
-            self.logFile.write('%s\tUploading batch %d/%d\n' %(utils.timestamp(),i+1,self.numBatches))
-            for fileName,fileSize,dropboxFile in zip(self.fileNameBatch[i],self.fileSizeBatch[i],self.dropboxFileBatch[i]):
-                print ('Moving %s\tto\t%s' %(fileName,dropboxFile))
-                self.logFile.write('%s\t%s\t%s\t%.6f GB\n' %(utils.timestamp(),fileName,dropboxFile,fileSize/1024/1024/1024))
-                shutil.move(fileName,dropboxFile)
+                toc = time.time()
+                timeElapsed = (toc-tic)/60/60
+                if (timeElapsed > self.batchTimeLimit_hour):
+                    self.logFile.write('%s\tCurrent batch upload incomplete.\n' %(utils.timestamp()))
+                    input('Batch not uploaded! Make sure to finish batch sync and press enter to continue ...')
     ############################################################
     
     ############################################################
@@ -404,10 +394,6 @@ class dropboxApp:
                 filesUploadFlag = False
                 break
         return filesUploadFlag
-        
-        if (self.fileNotOnDropboxCounter >= 10):
-            self.logFile.write('%s\tCurrent batch upload incomplete.\n' %(utils.timestamp()))
-            input('Batch not uploaded. Make sure to finish batch sync and press enter.')
     ############################################################
 ############################################################
 
