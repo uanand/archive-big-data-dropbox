@@ -143,6 +143,7 @@ class dropboxApp:
         self.makeBatches()
         self.uploadFiles()
         self.logFile.close()
+        self.dbx = dropbox.Dropbox(self.accessToken)
     ############################################################
     
     ############################################################
@@ -320,12 +321,26 @@ class dropboxApp:
         """
         
         for i in range(self.numBatches):
+            tic = time.time()
+            for fileName,fileSize,dropboxFile in zip(self.fileNameBatch[i],self.fileSizeBatch[i],self.dropboxFileBatch[i]):
+                print ('Moving %s\tto\t%s' %(fileName,dropboxFile))
+                self.logFile.write('%s\t%s\t%s\t%.6f GB\n' %(utils.timestamp(),fileName,dropboxFile,fileSize/1024/1024/1024))
+                shutil.move(fileName,dropboxFile)
+            while (uploadStatus==False):
+                uploadStatus = self.checkFilesOnWebsite(self.dropboxWebFileBatch[i-1])
+                
+            
+            
+            self.fileNameListLeft = numpy.asarray(fileNameList)
+            self.dropboxWebFileListLeft = numpy.asarray(dropboxWebFileList)
+        
+        for i in range(self.numBatches):
             self.dropboxNotRunningCounter,self.fileNotOnDropboxCounter = 0,0
             resourceAvailable = False
             while (resourceAvailable == False):
                 resourceAvailable = self.checkResource()
             if (i>0):
-                self.checkFilesOnWebsite(self.dropboxWebFileBatch[i-1],self.accessToken)
+                self.checkFilesOnWebsite(self.dropboxWebFileBatch[i-1])
             print ('Uploading batch %d/%d' %(i+1,self.numBatches))
             self.logFile.write('%s\tUploading batch %d/%d\n' %(utils.timestamp(),i+1,self.numBatches))
             for fileName,fileSize,dropboxFile in zip(self.fileNameBatch[i],self.fileSizeBatch[i],self.dropboxFileBatch[i]):
@@ -468,41 +483,31 @@ class dropboxApp:
     ############################################################
     
     ############################################################
-    def checkFilesOnWebsite(self,fileNameList,accessToken):
+    def checkFilesOnWebsite(self,fileNameList):
         """ Checks if all the files in current batch have been properly
         uploaded to cloud. If not, then the program pauses and waits for
         user to make sure Dropbox is running smoothly and batch sync is
-        complete. The functions accepts two arguments - list of files on
-        Dropbox cloud that need to be checked, and the accessToken to
-        access the files using Dropbox API.
+        complete. The functions accepts one argument - list of files on
+        Dropbox cloud that need to be checked.
         
         Usage:
         -----
-        self.checkFilesOnWebsite(fileNameList,accessToken)
+        self.checkFilesOnWebsite(fileNameList)
         
         Returns:
         -------
         NULL
         """
         
-        dbx = dropbox.Dropbox(accessToken)
-        while (self.fileNotOnDropboxCounter < 10):
-            allFilesUploadedFlag = True
-            for fileName in fileNameList:
-                try:
-                    tt = dbx.files_get_metadata(fileName)
-                except:
-                    allFilesUploadedFlag = False
-                    self.fileNotOnDropboxCounter += 1
-                    break
-                    
-            if (allFilesUploadedFlag == True):
+        filesUploadFlag = True
+        for fileName in fileNameList:
+            try:
+                tt = self.dbx.files_get_metadata(fileName)
+            except:
+                filesUploadFlag = False
                 break
-                
-            time.sleep(self.sleepTime)
-            dropBoxFreeFlag = False
-            while (dropBoxFreeFlag == False):
-                dropBoxFreeFlag = self.dropBoxFree()
+        return filesUploadFlag
+        
         if (self.fileNotOnDropboxCounter >= 10):
             self.logFile.write('%s\tCurrent batch upload incomplete.\n' %(utils.timestamp()))
             input('Batch not uploaded. Make sure to finish batch sync and press enter.')
