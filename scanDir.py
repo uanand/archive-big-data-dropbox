@@ -2,7 +2,7 @@ import numpy
 import pandas
 import os
 
-inputDir = r'D:\Fiji.app'
+inputDir = '/scratch/utkur/utkarsh/WettingLayer'
 fileSizeLimit_GB = 500
 
 
@@ -13,6 +13,7 @@ outFile = open('directorySize.txt','w')
 outFile.write('Directory\tNumber of files\tFile size (GB)\n')
 
 for root,dirs,files in os.walk(inputDir):
+    print ('Scanning %s' %(root))
     fileSize = 0
     numFiles = 0
     for name in files:
