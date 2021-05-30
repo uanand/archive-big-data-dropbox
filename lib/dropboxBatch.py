@@ -137,13 +137,14 @@ class dropboxApp:
         self.dbx = dropbox.Dropbox(self.accessToken)
         
         print ('Stage 2 - Data upload using APP')
-        logFile = open('logs/dropboxApp.log','w')
+        logFile = open('./logs/upload/dropboxApp.log','w')
         logFile.write('%s\tData upload using APP\n' %(utils.timestamp()))
         logFile.close()
         self.getFileList()
         utils.mkdirs(self.dropboxDirList)
         self.makeBatches()
         self.uploadFiles()
+        os.rename('./logs/upload/dropboxApp.log','./logs/upload/'+datetime.datetime.now().strftime("%Y%m%d_%H%M%S")+'.log')
     ############################################################
     
     ############################################################
@@ -323,13 +324,13 @@ class dropboxApp:
         for i in range(self.numBatches):
             if (self.storageFree()==True):
                 print ('Uploading batch %d/%d' %(i+1,self.numBatches))
-                logFile = open('logs/dropboxApp.log','a')
+                logFile = open('./logs/upload/dropboxApp.log','a')
                 logFile.write('%s\tUploading batch %d/%d\n' %(utils.timestamp(),i+1,self.numBatches))
                 logFile.close()
                 tic = time.time()
                 for fileName,fileSize,dropboxFile in zip(self.fileNameBatch[i],self.fileSizeBatch[i],self.dropboxFileBatch[i]):
                     print ('%s\tMoving %s\tto\t%s' %(utils.timestamp(),fileName,dropboxFile))
-                    logFile = open('logs/dropboxApp.log','a')
+                    logFile = open('./logs/upload/dropboxApp.log','a')
                     logFile.write('%s\t%s\t%s\t%.6f GB\n' %(utils.timestamp(),fileName,dropboxFile,fileSize/1024/1024/1024))
                     logFile.close()
                     shutil.move(fileName,dropboxFile)
@@ -342,8 +343,8 @@ class dropboxApp:
                     toc = time.time()
                     timeElapsed = (toc-tic)/60/60
                     if (timeElapsed > self.batchTimeLimit_hour):
-                        logFile = open('logs/dropboxApp.log','a')
-                        logFile.write('%s\tCurrent batch upload incomplete.\n' %(utils.timestamp()))
+                        logFile = open('./logs/upload/dropboxApp.log','a')
+                        logFile.write('%s\tCurrent batch upload incomplete\n' %(utils.timestamp()))
                         logFile.close()
                         input('Batch not uploaded! Make sure to finish batch sync and press enter to continue ...')
                         uploadStatus = True
@@ -368,7 +369,7 @@ class dropboxApp:
         if (availableSpace >= 2*self.batchSize):
             free = True
         else:
-            logFile = open('logs/dropboxApp.log','a')
+            logFile = open('./logs/upload/dropboxApp.log','a')
             logFile.write('%s\tDisk full\n' %(utils.timestamp()))
             logFile.close()
             input('Disk is full. Move data to online-only mode. Press enter to continue after more space is available.')
