@@ -86,11 +86,11 @@ class dataPrep:
         self.df = pandas.read_excel(self.excelName,sheet_name=self.sheetName,names=self.names)
         
         print ('Stage 1 - Data preparation')
-        self.logFile = open('logs/dataPrep.log','w')
-        self.logFile.write('%s\tStage 1 - Data preparation\n' %(utils.timestamp()))
+        self.logFile = open('./logs/dataPrep/dataPrep.log','w')
         self.getFileList()
         self.checkForLargeFiles()
         self.logFile.close()
+        os.rename('./logs/dataPrep/dataPrep.log','./logs/dataPrep/'+datetime.datetime.now().strftime("%Y%m%d_%H%M%S")+'.log')
     ####################################################################
     
     ####################################################################
