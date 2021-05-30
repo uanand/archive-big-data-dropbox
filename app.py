@@ -1,6 +1,10 @@
+import os
+import sys
+
+sys.path.append(os.path.abspath('./lib'))
+
 import dataPrep
 import dropboxBatch
-import utils
 
 # INPUT EXCEL FILE NAME WITH CORRESPONDING SHEET FOR DATA UPLOAD
 excelName = 'inputs.xlsx'
@@ -25,4 +29,3 @@ if ('APP' in sheetName):
     dbx = dropboxBatch.dropboxApp(excelName,sheetName,dropboxDir,accessToken,batchSize_GB,sleepTime_min,batchTimeLimit_hour)
 elif ('API' in sheetName):
     dbx = dropboxBatch.dropboxAPI(excelName,sheetName,accessToken,chunkSize_MB)
-utils.combineLogs()
