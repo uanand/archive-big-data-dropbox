@@ -14,7 +14,7 @@ import utils
 df = pandas.read_excel('zipDir.xlsx',sheet_name='zipDir',names=['inputDir','deleteFlag'])
 
 dirDetails = pandas.read_csv('directorySize.txt',delimiter='\t',names=['dirName','numSubDir','numFiles','size'],header=0)
-logFile = open('zipDir.log','w')
+logFile = open('../logs/preProcess/zipDir.log','w')
 logFile.write('Timestamp\tDirectory to zip\tNumber of subdirectories\tNumber of files\tDirectory size (GB)\n')
 
 if (platform.system()=='Linux'):
@@ -34,5 +34,5 @@ for inputDir,deleteFlag in df.values:
         subprocess.run([executable,'a',zipFileName,inputDir,'-sdel'])
         
 logFile.close()
-os.rename('zipDir.log','../logs/preProcess/'+datetime.datetime.now().strftime("%Y%m%d_%H%M%S")+'.log')
+os.rename('../logs/preProcess/zipDir.log','../logs/preProcess/'+datetime.datetime.now().strftime("%Y%m%d_%H%M%S")+'.log')
 ############################################################
