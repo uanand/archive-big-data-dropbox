@@ -3,7 +3,8 @@ import pandas
 import os
 
 fileSizeLimit_GB = 500
-df = pandas.read_excel('zipDir.xlsx',sheet_name='listDirToZip',names=['inputDir'])
+df = pandas.read_excel('zipDir.xlsx',sheet_name='listDirToZip',names=['inputDir'],usecols=[0])
+df = df.dropna(axis=0,how='all')
 
 ############################################################
 # STEP 1 - FIND OUT THE NUMBER OF FILES AND THEIR SIZE IN EACH

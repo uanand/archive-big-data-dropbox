@@ -11,7 +11,8 @@ import utils
 ############################################################
 # READ THE INPUT EXCEL FILE AND ZIP ARCHIVE THE FOLDERS
 ############################################################
-df = pandas.read_excel('zipDir.xlsx',sheet_name='zipDir',names=['inputDir','deleteFlag'])
+df = pandas.read_excel('zipDir.xlsx',sheet_name='zipDir',names=['inputDir','deleteFlag'],usecols=[0,1])
+df = df.dropna(axis=0,how='all')
 
 dirDetails = pandas.read_csv('directorySize.txt',delimiter='\t',names=['dirName','numSubDir','numFiles','size'],header=0)
 logFile = open('../logs/preProcess/zipDir.log','w')
