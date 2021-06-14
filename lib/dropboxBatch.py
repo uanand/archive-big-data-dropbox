@@ -7,6 +7,7 @@ import shutil
 import utils
 import time
 import dropbox
+import datetime
 from tqdm import tqdm
 
 exclusionList = [
@@ -338,8 +339,7 @@ class dropboxApp:
                 self.filesRemaining = self.dropboxWebFileBatch[i]
                 while (uploadStatus==False):
                     time.sleep(self.sleepTime_min*60)
-                    # uploadStatus = self.checkFilesOnWebsite(self.dropboxWebFileBatch[i])
-                    uploadStatus = self.checkFilesOnWebsite(self.filesRemaining)
+                    uploadStatus = self.checkFilesOnWebsite()
                     toc = time.time()
                     timeElapsed = (toc-tic)/60/60
                     if (timeElapsed > self.batchTimeLimit_hour):
@@ -383,7 +383,6 @@ class dropboxApp:
     ############################################################
     
     ############################################################
-    # def checkFilesOnWebsite(self,fileNameList):
     def checkFilesOnWebsite(self):
         """ Checks if all the files in current batch have been properly
         uploaded to cloud. If not, then the program pauses and waits for
@@ -414,17 +413,6 @@ class dropboxApp:
         for fileName in uploadedFileList:
             self.filesRemaining.remove(fileName)
         return filesUploadFlag
-        
-        # filesUploadFlag = True
-        # for fileName in fileNameList:
-            # try:
-                # tt = self.dbx.files_get_metadata(fileName)
-                # print ('%s Upload successful - %s' %(utils.timestamp(),fileName))
-            # except:
-                # filesUploadFlag = False
-                # print ('%s Upload ongoing - %s' %(utils.timestamp(),fileName))
-                # break
-        # return filesUploadFlag
     ############################################################
 ############################################################
 
