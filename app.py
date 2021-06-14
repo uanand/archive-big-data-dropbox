@@ -11,7 +11,7 @@ excelName = 'inputs.xlsx'
 sheetName = 'dropboxUpload_APP'
 
 # PARAMETERS FOR DATA PREPARATION AND ARCHIVING
-fileSizeLimit_GB = 100
+fileSizeLimit_GB = 500
 chunkSizeSplit_MB = 1024
 
 # PARAMETERS FOR DATA UPLOAD USING APP
