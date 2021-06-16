@@ -1,7 +1,6 @@
 import os
 import numpy
 import pandas
-import platform
 import psutil
 import shutil
 import utils
@@ -392,7 +391,7 @@ class dropboxApp:
         
         Usage:
         -----
-        self.checkFilesOnWebsite(fileNameList)
+        self.checkFilesOnWebsite()
         
         Returns:
         -------
