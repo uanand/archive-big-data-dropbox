@@ -333,7 +333,7 @@ class dropboxApp:
                     logFile = open('./logs/upload/dropboxApp.log','a')
                     logFile.write('%s\t%s\t%s\t%.6f GB\n' %(utils.timestamp(),fileName,dropboxFile,fileSize/1024/1024/1024))
                     logFile.close()
-                    shutil.move(fileName,dropboxFile)
+                    shutil.copy(fileName,dropboxFile)
                 uploadStatus = False
                 self.filesRemaining = self.dropboxWebFileBatch[i]
                 while (uploadStatus==False):
@@ -347,6 +347,12 @@ class dropboxApp:
                         logFile.close()
                         input('Batch not uploaded! Make sure to finish batch sync and press enter to continue ...')
                         uploadStatus = True
+                if (uploadStatus==True):
+                    for fileName in self.fileNameBatch[i]:
+                        if os.path.exists(fileName):
+                            os.remove(fileName)
+                        else:
+                            pass
     ############################################################
     
     ############################################################
