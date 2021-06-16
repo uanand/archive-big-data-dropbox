@@ -75,6 +75,7 @@ class dataPrep:
         that need to be uploaded on Dropbox.
         Calls self.checkForLargeFiles() which looks at the size of all
         the files and splits them if required.
+        Renames the dataPrep.log file with the appropriate time stamp.
         """
         
         self.excelName = excelName
