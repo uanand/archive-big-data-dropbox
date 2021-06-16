@@ -101,43 +101,6 @@ def timestamp():
     return datetime.datetime.now().strftime("%Y%m%d %H:%M:%S")
 ############################################################
 
-############################################################
-def combineLogs():
-    """ Combine the logs of archiving, data preparation, and uploading
-    stage. The new log is saved in logs directory with the current date
-    and time 'YYYYMMDD_HHMMSS.log'.
-    
-    Parameters:
-    ----------
-    NULL
-        
-    Returns:
-    -------
-    NULL
-    
-    Usage:
-    -----
-    combineLogs()
-    """
-    
-    logList = []
-    if os.path.exists('logs/archive.log'):
-        logList.append('logs/archive.log')
-    if os.path.exists('logs/dataPrep.log'):
-        logList.append('logs/dataPrep.log')
-    if os.path.exists('logs/dropboxApp.log'):
-        logList.append('logs/dropboxApp.log')
-    if os.path.exists('logs/dropboxAPI.log'):
-        logList.append('logs/dropboxAPI.log')
-        
-    logFile = open('logs/'+datetime.datetime.now().strftime("%Y%m%d_%H%M%S")+'.log','w')
-    for log in logList:
-        f = open(log,'r')
-        logFile.write(f.read())
-        f.close()
-        os.remove(log)
-    logFile.close()
-############################################################
 
 ############################################################
 def getDropboxWebFileName(localDropboxFile,localDropboxDir):
