@@ -348,11 +348,7 @@ class dropboxApp:
                         input('Batch not uploaded! Make sure to finish batch sync and press enter to continue ...')
                         uploadStatus = True
                 if (uploadStatus==True):
-                    for fileName in self.fileNameBatch[i]:
-                        if os.path.exists(fileName):
-                            os.remove(fileName)
-                        else:
-                            pass
+                    utils.deleteFiles(self.fileNameBatch[i])
     ############################################################
     
     ############################################################

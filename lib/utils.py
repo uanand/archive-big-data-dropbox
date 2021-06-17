@@ -131,3 +131,18 @@ def getDropboxWebFileName(localDropboxFile,localDropboxDir):
         fileName = fileName.replace('\\','/')
     return fileName
 ############################################################
+
+
+############################################################
+def deleteFiles(fileNameList):
+    """ Delete a list of files. The file names with complete path
+    are accepted as a list and they are deleted. If the file does
+    not exist then the function moves on to the next file for
+    deletion.
+    """
+    for fileName in fileNameList:
+        if os.path.exists(fileName):
+            os.remove(fileName)
+        else:
+            pass
+############################################################
