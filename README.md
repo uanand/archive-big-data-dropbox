@@ -27,7 +27,7 @@ This package provides a complete solution to seamlessly compress and upload your
 ## Usage
 The process is divided into two parts - 1. data compression, and 2. data synchronization with Dropbox.
 
-### Data comression
+### Data compression
 1. Due to its inability to handle a large number of files, it is recommended to zip a folder containing a large number of small files. For example, suppose the Gatan OneView electron microscope camera records a movie at 100 fps and stores every frame in a directory '001'. In this case it we will compress the files in the folder '001' and make a new large file '001.zip'.
 2. Navigate to the directory './preProcess' and enter the path of the directory you want to move to Dropbox in the 'listDirToZip' tab of the excel file './preProcess/zipDir.xlsx'. Save and run the code "./preProcess/1_listDirToZip.py". This will make a list of all the folders that you should zip before uploading to Dropbox. The directory list is written to file './preProcess/directoryZipList.txt'. Typically a 50 TB folder will take around 2 hours to navigate through.
 3. Copy the list of directories that need to be zipped to the 'zipDir' tab of the excel file './preProcess/zipDir.xlsx'. If there are any additional folders that you think need compressing add them to the list, and run "./preProcess/2_zipDir.py". The data compression is done using the [7zip](https://www.7-zip.org/) software, and the original folders are deleted after compression. A 50 TB directory may take upto a week to compress.
