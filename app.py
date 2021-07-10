@@ -16,10 +16,10 @@ chunkSizeSplit_MB = 1024
 
 # PARAMETERS FOR DATA UPLOAD USING APP
 dropboxDir = r'E:\Dropbox (NUSCentreofBioImagin)'   # DIRECTORY WHERE DROPBOX SYNC DIRECTORY IS LOCATED
-batchSize_GB = 500
+batchSize_GB = 1000
 sleepTime_min = 30
-batchTimeLimit_hour=12
-accessToken = '#############################' # GET DROPBOX ACCESS TOKEN BY CREATING AN APP HERE - https://www.dropbox.com/developers/apps
+batchTimeLimit_hour=24
+accessToken = '##############################' # GET DROPBOX ACCESS TOKEN BY CREATING AN APP HERE - https://www.dropbox.com/developers/apps
 
 # PARAMETERS FOR DATA UPLOAD USING API
 chunkSize_MB = 128 # in MB
