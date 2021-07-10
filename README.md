@@ -64,4 +64,6 @@ Downloading the files from Dropbox is easy. One can select the file and change i
 ### Data compression
 1. List the folder you want to navigate for compression in the 'listDirToZip' tab in 'zipDir.xlsx' and run "1_listDirToZip.py". Runtime for 50 TB folder is approx. 2 hours.
 2. From the output file 'directoryZipList.txt', enter the list of directories for archiving in the 'zipDir' tab in 'zipDir.xlsx' and run "2_zipDir.py". Runtime for 50 TB folder is approx. 1-2 weeks.
+
+### Data uploading
 3. In the tab 'dropboxUpload_APP' of 'inputs.xlsx' enter the directory you want to move to Dropbox with its corresponding Dropbox Directory and run "app.py". Runtime for 50 TB data is approx. 1 month.
