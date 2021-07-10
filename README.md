@@ -68,3 +68,6 @@ Downloading the files from Dropbox is easy. One can select the file and change i
 
 ### Data uploading
 3. In the tab 'dropboxUpload_APP' of './preProcess/inputs.xlsx' enter the directory you want to move to Dropbox with its corresponding Dropbox Directory and run "./preProcess/app.py". Runtime for 50 TB data is approx. 1 month.
+
+## Additional Notes
+Before starting the data upload, make sure that there is sufficient space available on Dropbox.
