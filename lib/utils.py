@@ -146,3 +146,42 @@ def deleteFiles(fileNameList):
         else:
             pass
 ############################################################
+
+
+############################################################
+def findSplitFiles(inputFile):
+    """ Get all the brother split files in the directory.
+    
+    Parameters:
+    ----------
+    inputFile : str
+        name of the first split file with file path
+        
+    Returns:
+    -------
+    splitFileList : list of str
+        list of all the other split files
+        
+    Usage:
+    -----
+    splitFileList = findSplitFiles(inputFile)
+    """
+    if (platform.system()=='Linux'):
+        tempList = inputFile.split('/')
+        path = ''
+        for temp in tempList[:-1]:
+            path = path+temp+'/'
+    elif (platform.system()=='Windows'):
+        tempList = inputFile.split('\\')
+        path = ''
+        for temp in tempList[:-1]:
+            path = path+temp+'\\'
+    fileName = inputFile.split('_split_0001')[0]+'_split_'
+    dirFileList = listdir(path)
+    splitFileList = []
+    for dirFile in dirFileList:
+        if (fileName in path+dirFile):
+            splitFileList.append(path+dirFile)
+    splitFileList = list(numpy.sort(splitFileList,kind='mergesort'))
+    return splitFileList
+############################################################
