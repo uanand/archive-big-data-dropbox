@@ -1,11 +1,11 @@
 # archive-big-data-dropbox
-Upload large volume (PB) of data to Dropbox seamlessly
+Automated framework to upload large volume (TBs) of data to Dropbox.
 
 ## Introduction
 Dropbox provides [paid services](https://www.dropbox.com/business/pricing) with unlimited data storage space. This can be useful for small to medium sized businesses which generate large amount of data and do not wish to invest on building their own servers for data management. However, uploading hundreds of terabytes of data to Dropbox servers can be challenging due to three reasons -
 
 1. *If the number of files synchronized to [Dropbox exceeds 300,000](https://help.dropbox.com/accounts-billing/space-storage/file-storage-limit) the performance of the desktop application may decline.* To solve this problem, it is recommended to make a zip file from a folder containing a large number of small files.
-2. *Dropbox is not good at synchronizing [terabytes of data](https://help.dropbox.com/installs-integrations/desktop/unexpected-quit) at a time.* To solve this problem it is recommended to synchronize the data to Dropbox in small batches (a few hundred GB)
+2. *Dropbox is not good at synchronizing [terabytes of data](https://help.dropbox.com/installs-integrations/desktop/unexpected-quit) at a time.* To solve this problem it is recommended to synchronize the data to Dropbox in small batches (a few hundred GB).
 3. *Dropbox desktop application cannot synchronize large files.*
  Contrary to their claim, Dropbox app cannot synchronize single files if they exceed 600 GB (This number could be smaller but I have done tests on a 600 GB file.) A way to resolve this is to split the large file into smaller chunks and then upload it to Dropbox. The split files can be downloaded and joined together using the python script "joinFiles.py".
 
@@ -39,27 +39,27 @@ A log file is generated at the end and placed in './logs/preProcess' directory.
 This can be done using the Dropbox Windows desktop application, or using Dropbox's API to upload directly to Dropbox.
 
 #### Using the APP
-1. Fill out the 'dropboxUpload_APP' sheet in './inputs.xlsx'. The first column can be a directory or a file you want to upload. The second column is the local Dropbox directory where you want to upload the data.  
+1. Fill out the 'dropboxUpload_APP' sheet in './inputs.xlsx'. The first column can be a directory or a file you want to upload. The second column is the local Dropbox directory where you want to upload the data.
 2. Open the python script "./app.py" and make sure the variable *sheetName* is set as 'dropboxUpload_APP'. Enter the location of *dropboxDir*, and you can change the values for *fileSizeLimit_GB* (Default: 500), *chunkSizeSplit_MB* (Default: 1024), *batchSize_GB* (Default: 1000), *sleepTime_min* (Default: 30, not recommended to change), and *batchTimeLimit_hour* (Default: 24, not recommended to change).
 3. Run "./app.py". Around 1.5-2 TB of data can be archived in a day.
 
 The script looks at the all the files that need to be uploaded. If any file is bigger than *fileSizeLimit_GB* (default is 500 GB), it is split into smaller pieces. After the data preparation is done the files are uploaded to Dropbox in batches of size *batchSize_GB* (default is 1000 GB). The script pauses if -
 
-* Dropbox physical hard drive gets full
+* The physical hard drive gets full.
 * The batch synchronization did not complete in 24 hours (*batchTimeLimit_hour*). This will usually happen if Dropbox application crashes.
-* TODO - Dropbox quota reached
+* TODO - Dropbox quota reached.
 
 A log file is generated at the end and placed in './logs/dataPrep' and './logs/upload' folders.
 
 #### Using the APIs
-1. Fill out the 'dropboxUpload_API' sheet in './inputs.xlsx'. The first column can be a directory or a file you want to upload. The second column in the server Dropbox directory where you want to upload the data.  
+1. Fill out the 'dropboxUpload_API' sheet in './inputs.xlsx'. The first column can be a directory or a file you want to upload. The second column in the server Dropbox directory where you want to upload the data.
 2. Open the python scripy "./app.py" and make sure the variable *sheetName* is set as 'dropboxUpload_API'. Change the *fileSizeLimit_GB* to 100 GB, as files larger than this ae not supported for API based transfer.
 3. Run "./app.py".
 
 You will need to generate an access token to your Dropbox by creating a [developer app](https://www.dropbox.com/developers/apps). You can also change the *chunkSize_MB* (default is 128 MB, maximum 150 MB). The data preparation is done exactly the same way but the data is uploaded directly to Dropbox. This method is generally slower. The script pauses if **Dropbox quota reached (TODO)**. A log file is generated at the end and placed in './logs/upload' folder.
 
 ### Downloading from Dropbox
-Downloading the files from Dropbox is easy. One can select the file and change its Smart Sync status to Local. After downloading all the corresponding split files, they can be joined together using the script "./joinFiles.py". Only the name of the first split file needs to be entered, and the script will look for all the subsequent splits and join the files together. After joining the files the zip archive is unzipped and the combined file is deleted. 
+Downloading the files from Dropbox is easy. One can select the file and change its Smart Sync status to Local. After downloading all the corresponding split files, they can be joined together using the script "./joinFiles.py". Only the name of the first split file needs to be entered, and the script will look for all the subsequent splits and join the files together. After joining the files the zip archive is unzipped and the combined file is deleted.
 
 ## Recap
 
@@ -71,6 +71,7 @@ Downloading the files from Dropbox is easy. One can select the file and change i
 3. In the tab 'dropboxUpload_APP' of './preProcess/inputs.xlsx' enter the directory you want to move to Dropbox with its corresponding Dropbox Directory and run "./preProcess/app.py". Runtime for 50 TB data is approx. 1 month.
 
 ## Additional Notes
+* Make sure you have the permission to read, write, and delete files. If not, contact the system administrator to give you appropriate permission.
 * Before starting the data upload, make sure that there is sufficient space available on Dropbox.
 * I have observed that the Dropbox app tends to crash frequently if the folder size exceeds 2 TB. In order to avoid this, keep moving the data to 'Online Only' mode once every 12 hours.
 * The Dropbox API upload does not perform well for large files (> 50 GB). It works, but 2-3 attemps are required for a successful upload.
