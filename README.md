@@ -59,7 +59,7 @@ A log file is generated at the end and placed in './logs/dataPrep' and './logs/u
 You will need to generate an access token to your Dropbox by creating a [developer app](https://www.dropbox.com/developers/apps). You can also change the *chunkSize_MB* (default is 128 MB, maximum 150 MB). The data preparation is done exactly the same way but the data is uploaded directly to Dropbox. This method is generally slower. The script pauses if **Dropbox quota reached (TODO)**. A log file is generated at the end and placed in './logs/upload' folder.
 
 ### Downloading from Dropbox
-Downloading the files from Dropbox is easy. One can select the file and change its Smart Sync status to Local. After downloading all the corresponding split files, they can be joined together using the script "./joinFiles.py". Only the name of the first split file needs to be entered, and the script will look for all the subsequent splits and join the files together. After joining the files the zip archive is unzipped and the combined file is deleted.
+Downloading the files from Dropbox is easy. One can select the file and change its Smart Sync status to Local. If a very large file is split into multiple smaller files, download all of them and they can be joined together using the script "./joinFiles.py". Only the name of the first split file, i.e. *_split_001, needs to be entered in the 'joinFiles' tab of excel file './inputs.xlsx'. The script will look for all the subsequent splits and join the files together. After joining, the split files are deleted and it is recommended to move the split files outside the Dropbox directory before joining them.
 
 ## Recap
 
@@ -75,3 +75,4 @@ Downloading the files from Dropbox is easy. One can select the file and change i
 * Before starting the data upload, make sure that there is sufficient space available on Dropbox.
 * I have observed that the Dropbox app tends to crash frequently if the folder size exceeds 2 TB. In order to avoid this, keep moving the data to 'Online Only' mode once every 12 hours.
 * The Dropbox API upload does not perform well for large files (> 50 GB). It works, but 2-3 attemps are required for a successful upload.
+* Move the split files out of Dropbox directory before combining them as they are deleted after splitting.
